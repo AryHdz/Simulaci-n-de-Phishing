@@ -8,10 +8,22 @@ El enfoque principal está basado en la ejecución simulada de un analista SOC d
 
 > ⚠️ **Nota:** Este proyecto es completamente educativo y se ejecuta en entorno local.
 
-## 🖥️ Vista del Proyecto
+## 🖥️ Vistas del Proyecto
 
-- 🔐 Login del Analista SOC
-- ✅ Resultado del Análisis de Phishing
+### 🔐 Login del Analista SOC
+![Login del Analista SOC](./Screenshot%202026-05-18%20164839.png)
+
+*Pantalla de acceso al laboratorio SOC, donde el analista ingresa sus credenciales para iniciar la simulación.*
+
+### 📧 Bandeja de entrada – Correo sospechoso
+![Correo sospechoso](./image.png)
+
+*El analista recibe un correo que simula una alerta de seguridad bancaria. Se observan indicadores iniciales de posible phishing.*
+
+### ✅ Resultado del Análisis de Phishing
+![Resultado del análisis](./Screenshot%202026-05-18%20171500.png)
+
+*Tras el análisis, la herramienta arroja una puntuación de riesgo (99/100) y detalla los indicadores reales que confirman que se trata de un intento de phishing.*
 
 ## 🎯 Objetivo
 
