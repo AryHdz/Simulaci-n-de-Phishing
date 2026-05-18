@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexora SOC Lab — Portal de Acceso</title>
+  <style>
+    :root {
+      --dark:   #070D1A;
+      --dark2:  #0A1628;
+      --navy:   #0D2B5E;
+      --blue:   #1A6DB5;
+      --cyan:   #2AB8D4;
+      --green:  #3DAA3D;
+      --red:    #E53E3E;
+      --light:  #E8EDF5;
+      --muted:  #6B8299;
+      --border: rgba(42, 184, 212, 0.2);
+      --glass:  rgba(13, 43, 94, 0.3);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: Segoe UI, Arial, sans-serif;
+      background: var(--dark);
+      color: var(--light);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Fondo animado con grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(42,184,212,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(42,184,212,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      z-index: 0;
+    }
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(26,109,181,0.15) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+      z-index: 0;
+      animation: pulse-glow 6s ease-in-out infinite;
+    }
+    .bg-glow2 {
+      position: fixed;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(42,184,212,0.1) 0%, transparent 70%);
+      bottom: -50px;
+      right: -50px;
+      z-index: 0;
+      animation: pulse-glow 8s ease-in-out infinite reverse;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.2); opacity: 1; }
+    }
+
+    /* Scanner line */
+    .scanner {
+      position: fixed;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      z-index: 1;
+      animation: scan 4s linear infinite;
+      opacity: 0.4;
+    }
+    @keyframes scan { from { top: -2px; } to { top: 100vh; } }
+
+    /* Card de login */
+    .login-card {
+      position: relative;
+      z-index: 10;
+      width: 440px;
+      background: rgba(10, 22, 40, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      box-shadow:
+        0 0 0 1px rgba(42,184,212,0.05),
+        0 25px 60px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      animation: card-in 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(32px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header del card */
+    .login-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .soc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      color: var(--cyan);
+      background: rgba(42,184,212,0.08);
+      border: 1px solid rgba(42,184,212,0.25);
+      padding: 6px 14px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .soc-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .login-header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--light);
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+    .login-header h1 span { color: var(--cyan); }
+    .login-header p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-family: Consolas, 'Courier New', monospace;
+    }
+
+    /* Formulario */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      font-family: Consolas, 'Courier New', monospace;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .input-wrap {
+      position: relative;
+    }
+    .input-wrap i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+    .form-group input {
+      width: 100%;
+      background: rgba(13,43,94,0.3);
+      border: 1px solid rgba(42,184,212,0.15);
+      border-radius: 10px;
+      padding: 13px 14px 13px 40px;
+      color: var(--light);
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      outline: none;
+    }
+    .form-group input:focus {
+      border-color: var(--cyan);
+      background: rgba(13,43,94,0.5);
+      box-shadow: 0 0 0 3px rgba(42,184,212,0.1);
+    }
+    .form-group input:focus + i,
+    .form-group input:focus ~ i { color: var(--cyan); }
+    .form-group input::placeholder { color: var(--muted); opacity: 0.6; }
+
+    /* Toggle password */
+    .toggle-pass {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+    .toggle-pass:hover { color: var(--cyan); }
+
+    /* Botón */
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-family: Segoe UI, Arial, sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.02em;
+    }
+    .btn-login:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(42,184,212,0.3);
+    }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login.loading { pointer-events: none; }
+    .btn-login .btn-text { transition: opacity 0.2s; }
+    .btn-login .btn-loader { display: none; }
+    .btn-login.loading .btn-text { opacity: 0; }
+    .btn-login.loading .btn-loader { display: inline-block; }
+
+    /* Alert de error */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      animation: slide-in 0.3s ease;
+    }
+    .alert.show { display: flex; }
+    .alert-error {
+      background: rgba(229,62,62,0.1);
+      border: 1px solid rgba(229,62,62,0.3);
+      color: #FC8181;
+    }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Footer del card */
+    .login-footer {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      text-align: center;
+    }
+    .login-footer p {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: Consolas, 'Courier New', monospace;
+    }
+    .login-footer .hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      color: rgba(42,184,212,0.6);
+      font-size: 0.72rem;
+    }
+
+    /* Hints de usuarios de prueba */
+    .demo-users {
+      margin-top: 16px;
+      background: rgba(13,43,94,0.3);
+      border: 1px solid rgba(42,184,212,0.1);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .demo-users .demo-title {
+      color: var(--cyan);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .demo-users .user-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .demo-users .user-row:last-child { border: none; }
+    .demo-users .user-row:hover { color: var(--light); }
+    .demo-users .user-row span:last-child { color: rgba(42,184,212,0.5); }
+    .fas { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="bg-glow2"></div>
+<div class="scanner"></div>
+
+<div class="login-card">
+  <div class="login-header">
+    <div class="soc-badge">SOC LAB · NIVEL 2</div>
+    <h1>Nexora <span>SOC</span></h1>
+    <p>// Sistema Operativo de Seguridad</p>
+  </div>
+
+  <div class="alert alert-error" id="alert-error">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span id="alert-msg">Credenciales incorrectas</span>
+  </div>
+
+  <form id="login-form" autocomplete="off">
+    <div class="form-group">
+      <label for="username">Identificador de analista</label>
+      <div class="input-wrap">
+        <input type="text" id="username" name="username" placeholder="usuario" required autocomplete="username">
+        <i class="fas fa-user"></i>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="password">Contraseña de acceso</label>
+      <div class="input-wrap">
+        <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+        <i class="fas fa-lock"></i>
+        <span class="toggle-pass" onclick="togglePass()"><i class="fas fa-eye" id="eye-icon"></i></span>
+      </div>
+    </div>
+    <button type="submit" class="btn-login" id="btn-login">
+      <span class="btn-text"><i class="fas fa-shield-halved"></i> Iniciar sesión</span>
+      <span class="btn-loader"><i class="fas fa-circle-notch fa-spin"></i> Autenticando...</span>
+    </button>
+  </form>
+
+  <div class="login-footer">
+    <p>Acceso restringido. Solo personal autorizado.</p>
+    <span class="hint"><i class="fas fa-circle" style="font-size:0.5rem;color:var(--green)"></i> Sistema operativo</span>
+
+    <!-- USUARIOS DE PRUEBA (solo para laboratorio) -->
+    <div class="demo-users">
+      <div class="demo-title">👥 Usuarios de laboratorio (clic para rellenar)</div>
+      <div class="user-row" onclick="fillUser('ana.garcia','Nexora2026!')">
+        <span>ana.garcia</span><span>********</span>
+      </div>
+      <div class="user-row" onclick="fillUser('carlos.ruiz','SecurePass#1')">
+        <span>carlos.ruiz</span><span>********</span>
+      </div>
+      <div class="user-row" onclick="fillUser('admin','Admin123!')">
+        <span>admin</span><span>********</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Verificar si ya hay sesión activa
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-login');
+    const alert = document.getElementById('alert-error');
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    btn.classList.add('loading');
+    alert.classList.remove('show');
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        btn.innerHTML = '<span class="btn-text"><i class="fas fa-check"></i> Acceso concedido</span>';
+        btn.style.background = 'linear-gradient(135deg, #276749, #3DAA3D)';
+        setTimeout(() => window.location.href = '/panel', 800);
+      } else {
+        document.getElementById('alert-msg').textContent = data.mensaje;
+        alert.classList.add('show');
+        btn.classList.remove('loading');
+        btn.style.background = '';
+      }
+    } catch (err) {
+      document.getElementById('alert-msg').textContent = 'Error de conexión con el servidor.';
+      alert.classList.add('show');
+      btn.classList.remove('loading');
+    }
+  });
+
+  function togglePass() {
+    const p = document.getElementById('password');
+    const icon = document.getElementById('eye-icon');
+    p.type = p.type === 'password' ? 'text' : 'password';
+    icon.className = p.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+  }
+
+  function fillUser(u, p) {
+    document.getElementById('username').value = u;
+    document.getElementById('password').value = p;
+    document.getElementById('username').focus();
+  }
+</script>
+</body>
+</html>

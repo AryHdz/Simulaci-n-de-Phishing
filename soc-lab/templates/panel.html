@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexora SOC — Panel del Analista</title>
+  <style>
+    :root {
+      --dark:   #070D1A;
+      --dark2:  #0A1628;
+      --dark3:  #0D1F3C;
+      --navy:   #0D2B5E;
+      --blue:   #1A6DB5;
+      --cyan:   #2AB8D4;
+      --green:  #3DAA3D;
+      --red:    #E53E3E;
+      --yellow: #D69E2E;
+      --light:  #E8EDF5;
+      --muted:  #6B8299;
+      --border: rgba(42, 184, 212, 0.15);
+      --glass:  rgba(13, 43, 94, 0.25);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: Segoe UI, Arial, sans-serif;
+      background: var(--dark);
+      color: var(--light);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── TOPBAR ─── */
+    .topbar {
+      height: 58px;
+      background: rgba(7,13,26,0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .topbar-logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .topbar-logo span { color: var(--cyan); }
+    .topbar-sep { width: 1px; height: 24px; background: var(--border); }
+    .topbar-module {
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: blink 2s ease-in-out infinite;
+      margin-right: 6px;
+    }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px 6px 6px;
+    }
+    .avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700;
+    }
+    .user-info { line-height: 1.2; }
+    .user-name { font-size: 0.82rem; font-weight: 600; }
+    .user-role { font-size: 0.68rem; color: var(--muted); font-family: Consolas, 'Courier New', monospace; }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid rgba(229,62,62,0.3);
+      color: rgba(229,62,62,0.7);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: Segoe UI, Arial, sans-serif;
+    }
+    .btn-logout:hover { background: rgba(229,62,62,0.1); color: #FC8181; border-color: rgba(229,62,62,0.5); }
+
+    /* ─── LAYOUT PRINCIPAL ─── */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: 1fr;
+      height: calc(100vh - 58px);
+    }
+
+    /* ─── SIDEBAR / INBOX ─── */
+    .sidebar {
+      background: var(--dark2);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-title {
+      font-size: 0.7rem;
+      font-family: Consolas, 'Courier New', monospace;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .sidebar-count {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--light);
+    }
+    .sidebar-count span { color: var(--cyan); }
+
+    .inbox-list { padding: 12px; flex: 1; }
+    .inbox-item {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .inbox-item.active,
+    .inbox-item:hover {
+      background: rgba(26,109,181,0.2);
+      border-color: rgba(42,184,212,0.4);
+    }
+    .inbox-item.unread::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--cyan);
+      border-radius: 3px 0 0 3px;
+    }
+    .inbox-from {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--light);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .inbox-subject {
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 6px;
+    }
+    .inbox-date {
+      font-size: 0.68rem;
+      font-family: Consolas, 'Courier New', monospace;
+      color: rgba(107,130,153,0.7);
+    }
+    .inbox-alert-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.65rem;
+      background: rgba(214,158,46,0.15);
+      border: 1px solid rgba(214,158,46,0.3);
+      color: #ECC94B;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 6px;
+    }
+
+    /* ─── PANEL DERECHO ─── */
+    .content-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Panel vacío */
+    .empty-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--muted);
+    }
+    .empty-panel i { font-size: 3rem; color: rgba(42,184,212,0.2); }
+    .empty-panel p { font-family: Consolas, 'Courier New', monospace; font-size: 0.85rem; }
+
+    /* Visor de email */
+    .email-panel { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+    .email-panel.show { display: flex; }
+
+    .email-header {
+      padding: 24px 28px 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,22,40,0.5);
+    }
+    .email-subject {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--light);
+    }
+    .email-meta {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 12px;
+      font-size: 0.82rem;
+    }
+    .meta-label {
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding-top: 1px;
+    }
+    .meta-val { color: var(--light); }
+    .meta-val.suspicious {
+      color: #FC8181;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.8rem;
+    }
+    .meta-val.suspicious::after {
+      content: ' ⚠️';
+    }
+
+    /* Cuerpo del email */
+    .email-body-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+    }
+    .email-body {
+      background: white;
+      color: #1a1a1a;
+      border-radius: 12px;
+      padding: 32px;
+      max-width: 680px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+      font-family: Arial, sans-serif;
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+
+    /* Simulación del email tal como aparece en la imagen */
+    .email-body .company-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 20px;
+    }
+    .company-logo-box {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, #0D2B5E, #1A6DB5);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 1.3rem;
+      font-family: Segoe UI, Arial, sans-serif;
+      letter-spacing: -0.05em;
+    }
+    .company-name-block .name { font-size: 1.2rem; font-weight: 700; color: #0D2B5E; letter-spacing: -0.02em; }
+    .company-name-block .sub { font-size: 0.65rem; letter-spacing: 0.12em; color: #1A6DB5; text-transform: uppercase; }
+
+    .email-body .meta-line { font-size: 0.82rem; color: #555; margin-bottom: 4px; }
+    .email-body .meta-line strong { color: #222; }
+    .email-body hr { border: none; border-top: 1px solid #e8e8e8; margin: 16px 0; }
+    .email-body p { margin-bottom: 14px; }
+    .email-body .alert-title {
+      color: #1A6DB5;
+      font-weight: 700;
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    .email-body ol { padding-left: 20px; margin-bottom: 14px; }
+    .email-body ol li { margin-bottom: 6px; }
+    .email-body a.malicious {
+      color: #1A6DB5;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .email-body .signature { color: #1A6DB5; font-weight: 600; }
+    .email-body .sig-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e8e8e8;
+      font-size: 0.82rem;
+      color: #555;
+    }
+
+    /* URL hover warning */
+    .url-warn-tooltip {
+      display: none;
+      position: fixed;
+      background: #1a1a1a;
+      border: 1px solid rgba(229,62,62,0.5);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      color: #FC8181;
+      font-family: Consolas, 'Courier New', monospace;
+      z-index: 9999;
+      pointer-events: none;
+      max-width: 300px;
+    }
+
+    /* ─── PANEL DE ANÁLISIS ─── */
+    .analysis-panel {
+      border-top: 1px solid var(--border);
+      background: rgba(7,13,26,0.8);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+    }
+    .analysis-panel.open { max-height: 600px; overflow-y: auto; }
+
+    .analysis-inner { padding: 24px 28px; }
+    .analysis-title {
+      font-size: 0.7rem;
+      font-family: Consolas, 'Courier New', monospace;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Pregunta phishing */
+    .question-block { margin-bottom: 20px; }
+    .question-block, .justif-wrap { display: none; }
+    .question-block p {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--light);
+    }
+    .radio-group { display: flex; gap: 12px; }
+    .radio-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--glass);
+      cursor: pointer;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .radio-btn.phishing { border-color: rgba(229,62,62,0.3); color: #FC8181; }
+    .radio-btn.legit { border-color: rgba(61,170,61,0.3); color: #68D391; }
+    .radio-btn.selected.phishing { background: rgba(229,62,62,0.15); border-color: var(--red); }
+    .radio-btn.selected.legit { background: rgba(61,170,61,0.15); border-color: var(--green); }
+    .radio-btn:hover { transform: translateY(-1px); }
+
+    /* Indicadores */
+    .indicators-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .indicator-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--glass);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+    .indicator-check:hover { border-color: rgba(42,184,212,0.3); color: var(--light); }
+    .indicator-check.checked {
+      background: rgba(42,184,212,0.1);
+      border-color: rgba(42,184,212,0.4);
+      color: var(--light);
+    }
+    .indicator-check input { display: none; }
+    .check-icon {
+      width: 16px; height: 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem;
+      transition: all 0.15s;
+      margin-top: 1px;
+    }
+    .indicator-check.checked .check-icon {
+      background: var(--cyan);
+      border-color: var(--cyan);
+      color: var(--dark);
+    }
+
+    /* Justificación */
+    .justif-wrap { margin-bottom: 20px; }
+    .justif-wrap label {
+      display: block;
+      font-size: 0.72rem;
+      font-family: Consolas, 'Courier New', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .justif-wrap textarea {
+      width: 100%;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      color: var(--light);
+      font-family: Segoe UI, Arial, sans-serif;
+      font-size: 0.85rem;
+      resize: vertical;
+      min-height: 80px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .justif-wrap textarea:focus { border-color: var(--cyan); }
+    .justif-wrap textarea::placeholder { color: var(--muted); }
+
+    /* Botón de enviar análisis */
+    .btn-analyze {
+      background: linear-gradient(135deg, #0D2B5E, var(--blue));
+      border: 1px solid rgba(42,184,212,0.3);
+      color: var(--light);
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-family: Segoe UI, Arial, sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-analyze:hover {
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      box-shadow: 0 6px 20px rgba(42,184,212,0.25);
+    }
+
+    /* Toggle botón de análisis */
+    .btn-analyze:disabled {
+      cursor: wait;
+      opacity: 0.7;
+      transform: none;
+    }
+
+    .detector-panel {
+      display: block;
+      margin-bottom: 20px;
+      padding: 14px;
+      border: 1px solid rgba(42,184,212,0.22);
+      border-radius: 10px;
+      background: rgba(13,43,94,0.25);
+    }
+    .detector-panel.show { display: block; }
+    .detector-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .detector-title {
+      color: var(--cyan);
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .risk-badge {
+      border: 1px solid rgba(42,184,212,0.25);
+      border-radius: 999px;
+      color: var(--muted);
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.68rem;
+      padding: 4px 10px;
+    }
+    .risk-badge.alto { color: #FC8181; border-color: rgba(229,62,62,0.45); background: rgba(229,62,62,0.12); }
+    .risk-badge.medio { color: #ECC94B; border-color: rgba(214,158,46,0.45); background: rgba(214,158,46,0.12); }
+    .risk-badge.bajo { color: #68D391; border-color: rgba(61,170,61,0.45); background: rgba(61,170,61,0.12); }
+    .scan-bar {
+      height: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(7,13,26,0.65);
+      margin-bottom: 12px;
+    }
+    .scan-bar-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+      transition: width 0.35s ease;
+    }
+    .scan-steps {
+      display: grid;
+      gap: 8px;
+    }
+    .scan-step {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+    .scan-step.done { color: var(--light); }
+    .scan-step.warn { color: #FC8181; }
+    .scan-points {
+      flex-shrink: 0;
+      color: var(--cyan);
+      font-family: Consolas, 'Courier New', monospace;
+    }
+    .python-console {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px solid rgba(42,184,212,0.18);
+      border-radius: 8px;
+      background: rgba(2,7,14,0.72);
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.75rem;
+      line-height: 1.45;
+      color: #A0AEC0;
+      min-height: 142px;
+    }
+    .console-line.ok { color: #68D391; }
+    .console-line.warn { color: #FC8181; }
+    .console-line.info { color: var(--cyan); }
+    .detector-result-card {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid rgba(229,62,62,0.45);
+      border-radius: 10px;
+      background: rgba(229,62,62,0.12);
+    }
+    .detector-result-card.show { display: block; }
+    .result-kicker {
+      color: #FC8181;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .result-verdict {
+      color: #FFF5F5;
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .prevention-list {
+      display: grid;
+      gap: 6px;
+      color: var(--light);
+      font-size: 0.8rem;
+    }
+
+    .btn-open-analysis {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: rgba(42,184,212,0.08);
+      border: 1px solid rgba(42,184,212,0.25);
+      color: var(--cyan);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-family: Segoe UI, Arial, sans-serif;
+      font-weight: 600;
+      transition: all 0.2s;
+      margin: 16px 28px;
+    }
+    .btn-open-analysis:hover { background: rgba(42,184,212,0.15); }
+
+    /* ─── MODAL DE RESULTADO ─── */
+    .result-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .result-overlay.show { display: flex; }
+    .result-modal {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 560px;
+      width: 90%;
+      animation: modal-in 0.35s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .result-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .result-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+    .result-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
+    .result-title.correct { color: var(--green); }
+    .result-title.wrong { color: var(--red); }
+    .result-score {
+      font-size: 2.5rem;
+      font-weight: 800;
+      font-family: Consolas, 'Courier New', monospace;
+      color: var(--cyan);
+      margin-bottom: 4px;
+    }
+    .result-score-label { font-size: 0.75rem; color: var(--muted); font-family: Consolas, 'Courier New', monospace; }
+
+    .result-explanation {
+      background: rgba(13,43,94,0.4);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--light);
+      margin-bottom: 20px;
+    }
+
+    .result-indicators { margin-bottom: 24px; }
+    .result-indicators h4 {
+      font-size: 0.72rem;
+      font-family: Consolas, 'Courier New', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .indicator-result-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.8rem;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      line-height: 1.4;
+    }
+    .indicator-result-item:last-child { border: none; }
+    .indicator-result-item .ind-icon { flex-shrink: 0; margin-top: 2px; }
+    .ind-correct { color: var(--green); }
+    .ind-missed { color: var(--muted); }
+    .ind-wrong { color: var(--red); }
+
+    .btn-close-result {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: Segoe UI, Arial, sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-close-result:hover { opacity: 0.9; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(42,184,212,0.2); border-radius: 4px; }
+    .fas { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">Nexora <span>SOC</span></div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-module"><span class="status-dot"></span>Panel del Analista</div>
+  </div>
+  <div class="topbar-right">
+    <div class="user-chip">
+      <div class="avatar" id="user-avatar">??</div>
+      <div class="user-info">
+        <div class="user-name" id="user-name">Cargando...</div>
+        <div class="user-role" id="user-role">—</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
+  </div>
+</div>
+
+<!-- LAYOUT PRINCIPAL -->
+<div class="main-layout">
+
+  <!-- SIDEBAR / INBOX -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">Bandeja de entrada</div>
+      <div class="sidebar-count">Mensajes: <span id="msg-count">—</span></div>
+    </div>
+    <div class="inbox-list" id="inbox-list">
+      <div style="text-align:center;padding:30px;color:var(--muted);font-size:0.82rem;">
+        <i class="fas fa-circle-notch fa-spin"></i> Cargando...
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL DERECHO -->
+  <div class="content-panel">
+
+    <!-- Estado vacío -->
+    <div class="empty-panel" id="empty-panel">
+      <i class="fas fa-inbox"></i>
+      <p>// Selecciona un mensaje para analizarlo</p>
+    </div>
+
+    <!-- Visor de email -->
+    <div class="email-panel" id="email-panel">
+
+      <div class="email-header">
+        <div class="email-subject" id="email-subject">—</div>
+        <div class="email-meta">
+          <span class="meta-label">De</span>
+          <span class="meta-val suspicious" id="email-from">—</span>
+          <span class="meta-label">Para</span>
+          <span class="meta-val" id="email-to">—</span>
+          <span class="meta-label">Fecha</span>
+          <span class="meta-val" id="email-date">—</span>
+        </div>
+      </div>
+
+      <div class="email-body-wrap">
+        <!-- Cuerpo del email (simulación visual del correo) -->
+        <div class="email-body">
+          <div class="company-header">
+            <div class="company-logo-box">N</div>
+            <div class="company-name-block">
+              <div class="name">NEXORA</div>
+              <div class="sub">Soluciones Tecnológicas</div>
+            </div>
+          </div>
+
+          <div class="meta-line"><strong>De:</strong> Soporte Bancrio Nexora &lt;soporte@nexora-seguro.net&gt;</div>
+          <div class="meta-line"><strong>Para:</strong> finanzas@nexora.com</div>
+          <div class="meta-line"><strong>Asunto:</strong> ⚠️ ALERTA DE SEGURIDAD: Cuenta bloqueada por actividades sospechosas</div>
+          <hr>
+
+          <p>Estimado equipo de finanzas,</p>
+          <p>Hemos detectado 3 intentos de acceso no autorizados a su cuenta bancaria corporativa. Por seguridad, la cuenta ha sido <strong>SUSPENDIDA</strong> temporalmente.</p>
+
+          <p class="alert-title">PARA REACTIVAR SU CUENTA EN LAS PRÓXIMAS 2 HORAS:</p>
+          <ol>
+            <li>Haga clic en el siguiente enlace: <a class="malicious" id="phishing-link" onclick="linkWarning(event)">http://nexora-verificacion.xyz/secure/login</a></li>
+            <li>Confirme sus credenciales de acceso</li>
+            <li>Valide su token de seguridad</li>
+          </ol>
+
+          <p>Si no completa este proceso en 2 horas, su cuenta quedará permanentemente bloqueada y se reportará a la unidad de fraudes financieros.</p>
+
+          <p>Atentamente,</p>
+          <p class="signature">Soporte Bancario Nexora</p>
+          <div class="sig-footer">
+            <span>+34 987 654 321</span>
+            <span>|</span>
+            <span style="color:#1A6DB5">www.nexora.com</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón para abrir análisis -->
+      <button class="btn-open-analysis" id="btn-open-analysis" onclick="toggleAnalysis()">
+        <i class="fas fa-search" id="analysis-toggle-icon"></i>
+        <span id="analysis-toggle-label">Abrir herramienta de análisis</span>
+      </button>
+
+      <!-- Panel de análisis -->
+      <div class="analysis-panel" id="analysis-panel">
+        <div class="analysis-inner">
+          <div class="analysis-title">
+            <i class="fas fa-microscope"></i>
+            Análisis del mensaje — Laboratorio SOC
+          </div>
+
+          <!-- Pregunta 1: ¿Es phishing? -->
+          <div class="question-block">
+            <p>1. ¿Cómo clasificas este mensaje?</p>
+            <div class="radio-group">
+              <div class="radio-btn phishing" id="btn-phishing" onclick="selectClassification(true)">
+                <i class="fas fa-skull-crossbones"></i> Phishing / Malicioso
+              </div>
+              <div class="radio-btn legit" id="btn-legit" onclick="selectClassification(false)">
+                <i class="fas fa-check-circle"></i> Mensaje legítimo
+              </div>
+            </div>
+          </div>
+
+          <!-- Indicadores -->
+          <div class="question-block">
+            <p>2. Marca los indicadores de compromiso (IoC) que identifiques:</p>
+            <div class="indicators-grid" id="indicators-grid">
+              <!-- Se generan dinámicamente -->
+            </div>
+          </div>
+
+          <!-- Justificación -->
+          <div class="justif-wrap">
+            <label>3. Justificación técnica (opcional)</label>
+            <textarea id="justificacion" placeholder="Describe tu razonamiento como analista SOC..."></textarea>
+          </div>
+
+          <div class="detector-panel" id="detector-panel">
+            <div class="detector-head">
+              <div class="detector-title">Motor Python: Prevencion de ataques.py</div>
+              <div class="risk-badge" id="detector-risk">EN ESPERA</div>
+            </div>
+            <div class="scan-bar"><div class="scan-bar-fill" id="scan-bar-fill"></div></div>
+            <div class="scan-steps" id="scan-steps"></div>
+            <div class="python-console" id="python-console">
+              <div class="console-line info">python Prevencion_de_ataques.py --scan mensaje_actual</div>
+              <div class="console-line">Esperando ejecucion del detector...</div>
+            </div>
+            <div class="detector-result-card" id="detector-result-card">
+              <div class="result-kicker">Resultado del detector</div>
+              <div class="result-verdict">Phishing / Malicioso</div>
+              <div class="prevention-list" id="prevention-list"></div>
+            </div>
+          </div>
+
+          <button class="btn-analyze" id="btn-submit-analysis" onclick="submitAnalysis()">
+            <i class="fas fa-paper-plane"></i>
+            Enviar análisis
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Tooltip de URL -->
+<div class="url-warn-tooltip" id="url-tooltip">
+  ⛔ URL SOSPECHOSA — No hacer clic en entorno real<br>
+  <span style="color:#A0AEC0">nexora-verificacion.xyz ≠ nexora.com</span>
+</div>
+
+<!-- Modal de resultado -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-modal">
+    <div class="result-header">
+      <div class="result-icon" id="result-icon">🎯</div>
+      <div class="result-title" id="result-title">—</div>
+      <div class="result-score" id="result-score">—</div>
+      <div class="result-score-label">PUNTUACIÓN DEL ANÁLISIS</div>
+    </div>
+    <div class="result-explanation" id="result-explanation">—</div>
+    <div class="result-indicators" id="result-indicators-block">
+      <h4>Indicadores reales del mensaje:</h4>
+      <div id="result-indicators-list"></div>
+    </div>
+    <button class="btn-close-result" onclick="closeResult()">
+      <i class="fas fa-redo"></i> Repetir ejercicio
+    </button>
+  </div>
+</div>
+
+<script>
+  let currentMsg = null;
+  let allIndicators = [];
+  let selectedClassification = null;
+  let analysisOpen = false;
+
+  // ─── INIT ───
+  async function init() {
+    const session = await fetch('/api/session').then(r => r.json());
+    if (!session.autenticado) {
+      window.location.href = '/';
+      return;
+    }
+    const u = session.usuario;
+    document.getElementById('user-avatar').textContent = u.avatar;
+    document.getElementById('user-name').textContent = u.nombre;
+    document.getElementById('user-role').textContent = u.rol;
+    loadInbox();
+  }
+
+  async function loadInbox() {
+    const data = await fetch('/api/inbox').then(r => r.json());
+    const list = document.getElementById('inbox-list');
+    document.getElementById('msg-count').textContent = data.mensajes.length;
+    list.innerHTML = '';
+    data.mensajes.forEach(msg => {
+      const div = document.createElement('div');
+      div.className = 'inbox-item unread';
+      div.innerHTML = `
+        <div class="inbox-from">${msg.de_nombre}</div>
+        <div class="inbox-subject">${msg.asunto.substring(0, 50)}...</div>
+        <div class="inbox-date">${msg.fecha}</div>
+        <div class="inbox-alert-badge"><i class="fas fa-exclamation-triangle"></i> Marcar para revisión</div>
+      `;
+      div.onclick = (e) => openMessage(msg, e.currentTarget);
+      list.appendChild(div);
+    });
+  }
+
+  async function openMessage(msg, selectedItem) {
+    currentMsg = msg;
+    selectedClassification = true;
+
+    // Actualizar UI
+    document.querySelectorAll('.inbox-item').forEach(i => i.classList.remove('active'));
+    selectedItem.classList.add('active');
+    selectedItem.classList.remove('unread');
+
+    document.getElementById('email-subject').textContent = msg.asunto;
+    document.getElementById('email-from').textContent = `${msg.de_nombre} <${msg.de_email}>`;
+    document.getElementById('email-to').textContent = msg.para;
+    document.getElementById('email-date').textContent = msg.fecha;
+
+    document.getElementById('empty-panel').style.display = 'none';
+    document.getElementById('email-panel').style.display = 'flex';
+    document.getElementById('email-panel').classList.add('show');
+
+    // Resetear análisis
+    resetDetectorPanel();
+    closeAnalysis();
+
+    // Cargar indicadores
+    const indData = await fetch(`/api/indicadores/${msg.id}`).then(r => r.json());
+    allIndicators = indData.indicadores;
+    renderIndicators();
+  }
+
+  function renderIndicators() {
+    const grid = document.getElementById('indicators-grid');
+    grid.innerHTML = '';
+    allIndicators.forEach((ind, i) => {
+      const div = document.createElement('div');
+      div.className = 'indicator-check';
+      div.dataset.indicator = ind;
+      div.innerHTML = `
+        <div class="check-icon" id="check-${i}">✓</div>
+        <span>${ind}</span>
+      `;
+      div.onclick = () => {
+        div.classList.toggle('checked');
+      };
+      grid.appendChild(div);
+    });
+  }
+
+  function selectClassification(isPhishing) {
+    selectedClassification = isPhishing;
+    document.getElementById('btn-phishing').classList.toggle('selected', isPhishing);
+    document.getElementById('btn-legit').classList.toggle('selected', !isPhishing);
+  }
+
+  function toggleAnalysis() {
+    analysisOpen = !analysisOpen;
+    const panel = document.getElementById('analysis-panel');
+    const icon = document.getElementById('analysis-toggle-icon');
+    const label = document.getElementById('analysis-toggle-label');
+    if (analysisOpen) {
+      panel.classList.add('open');
+      icon.className = 'fas fa-chevron-down';
+      label.textContent = 'Cerrar herramienta de análisis';
+    } else {
+      closeAnalysis();
+    }
+  }
+
+  function closeAnalysis() {
+    analysisOpen = false;
+    document.getElementById('analysis-panel').classList.remove('open');
+    document.getElementById('analysis-toggle-icon').className = 'fas fa-search';
+    document.getElementById('analysis-toggle-label').textContent = 'Abrir herramienta de análisis';
+  }
+
+  function detectarPhishingSimulado(msg) {
+    const dominiosOficiales = ['nexora.com', 'nexora.net', 'nexora.mx', 'nexora.es', 'correo.nexora.com', 'nexora-seguro.com'];
+    const contenido = `${msg.asunto} ${msg.cuerpo || ''}`;
+    const detecciones = [];
+    let puntaje = 0;
+
+    const remitenteMatch = (msg.de_email || '').match(/@([\w.-]+)/);
+    const dominio = remitenteMatch ? remitenteMatch[1].toLowerCase() : '';
+    if (!dominio || !dominiosOficiales.includes(dominio)) {
+      const detalle = dominio && dominio.includes('nexora')
+        ? `Suplantacion detectada: ${dominio}`
+        : `Dominio no autorizado: ${dominio || 'sin dominio'}`;
+      detecciones.push({ categoria: 'Remitente sospechoso', detalle, puntos: 2 });
+      puntaje += 2;
+    }
+
+    const urls = contenido.match(/https?:\/\/[^\s<>"')]+/gi) || [];
+    const enlaces = urls.filter(url => {
+      try {
+        const parsed = new URL(url);
+        const host = parsed.hostname.toLowerCase();
+        return parsed.protocol !== 'https:' || host.includes('login') || host.includes('secure') || host.includes('verify') || host.includes('nexora');
+      } catch (_) {
+        return false;
+      }
+    });
+    if (enlaces.length) {
+      detecciones.push({ categoria: 'Enlaces sospechosos', detalle: enlaces[0], puntos: 2 });
+      puntaje += 2;
+    }
+
+    const urgencia = [/bloquead[oa]/i, /suspendid[oa]/i, /\d+\s*horas?/i, /inmediatamente/i, /urgente/i]
+      .filter(patron => patron.test(contenido));
+    if (urgencia.length) {
+      detecciones.push({ categoria: 'Lenguaje de urgencia', detalle: 'Bloqueo, suspension o limite de tiempo detectado', puntos: Math.min(2, urgencia.length) });
+      puntaje += Math.min(2, urgencia.length);
+    }
+
+    const datosSensibles = [/contraseñ[ao]/i, /password/i, /token/i, /2fa/i, /codigo de verificacion/i, /credenciales/i]
+      .filter(patron => patron.test(contenido));
+    if (datosSensibles.length) {
+      detecciones.push({ categoria: 'Solicitud de datos sensibles', detalle: 'Pide credenciales, contrasena o token', puntos: Math.min(2, datosSensibles.length) });
+      puntaje += Math.min(2, datosSensibles.length);
+    }
+
+    if (/nexora/i.test(contenido) && !dominiosOficiales.includes(dominio)) {
+      detecciones.push({ categoria: 'Suplantacion de marca', detalle: 'Uso de marca Nexora desde dominio no oficial', puntos: 2 });
+      puntaje += 2;
+    }
+
+    const porcentaje = (puntaje / 10) * 100;
+    const nivel = porcentaje >= 70 ? 'ALTO' : porcentaje >= 40 ? 'MEDIO' : 'BAJO';
+    return { puntaje, nivel, detecciones };
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function resetDetectorPanel() {
+    document.getElementById('detector-panel').classList.add('show');
+    document.getElementById('scan-steps').innerHTML = '';
+    document.getElementById('scan-bar-fill').style.width = '0%';
+    document.getElementById('python-console').innerHTML = `
+      <div class="console-line info">python Prevencion_de_ataques.py --scan mensaje_actual</div>
+      <div class="console-line">Esperando ejecucion del detector...</div>
+    `;
+    document.getElementById('detector-result-card').classList.remove('show');
+    document.getElementById('prevention-list').innerHTML = '';
+    const risk = document.getElementById('detector-risk');
+    risk.className = 'risk-badge';
+    risk.textContent = 'EN ESPERA';
+  }
+
+  async function ejecutarEscaneoSimulado(msg) {
+    const panel = document.getElementById('detector-panel');
+    const steps = document.getElementById('scan-steps');
+    const bar = document.getElementById('scan-bar-fill');
+    const risk = document.getElementById('detector-risk');
+    const consoleBox = document.getElementById('python-console');
+    const resultCard = document.getElementById('detector-result-card');
+    const preventionList = document.getElementById('prevention-list');
+    const resultado = detectarPhishingSimulado(msg);
+    const pasos = [
+      'Validando dominio del remitente',
+      'Extrayendo y evaluando enlaces',
+      'Buscando lenguaje de urgencia',
+      'Detectando solicitudes de datos sensibles',
+      'Calculando puntaje de riesgo'
+    ];
+
+    panel.classList.add('show');
+    steps.innerHTML = '';
+    consoleBox.innerHTML = '<div class="console-line info">>>> detector = PhishingDetector()</div>';
+    resultCard.classList.remove('show');
+    preventionList.innerHTML = '';
+    bar.style.width = '0%';
+    risk.className = 'risk-badge';
+    risk.textContent = 'ANALIZANDO';
+
+    for (let i = 0; i < pasos.length; i++) {
+      const deteccion = resultado.detecciones[i];
+      const step = document.createElement('div');
+      step.className = deteccion ? 'scan-step done warn' : 'scan-step done';
+      step.innerHTML = `
+        <span>${pasos[i]}${deteccion ? `: ${deteccion.categoria}` : ''}</span>
+        <span class="scan-points">${deteccion ? `+${deteccion.puntos}` : 'OK'}</span>
+      `;
+      steps.appendChild(step);
+      const consoleLine = document.createElement('div');
+      consoleLine.className = deteccion ? 'console-line warn' : 'console-line ok';
+      consoleLine.textContent = deteccion
+        ? `>>> ${deteccion.categoria}: ${deteccion.detalle} (+${deteccion.puntos})`
+        : `>>> ${pasos[i]}: sin hallazgos criticos`;
+      consoleBox.appendChild(consoleLine);
+      bar.style.width = `${((i + 1) / pasos.length) * 100}%`;
+      await sleep(450);
+    }
+
+    risk.textContent = `RIESGO ${resultado.nivel} - ${resultado.puntaje}/10`;
+    risk.className = `risk-badge ${resultado.nivel.toLowerCase()}`;
+    consoleBox.insertAdjacentHTML('beforeend', `
+      <div class="console-line info">>>> resultado.safe = False</div>
+      <div class="console-line warn">>>> clasificacion = "Phishing / Malicioso"</div>
+      <div class="console-line ok">>>> accion = "bloquear enlace, aislar mensaje, reportar al SOC"</div>
+    `);
+    preventionList.innerHTML = `
+      <div>Bloquear enlace sospechoso: nexora-verificacion.xyz</div>
+      <div>Aislar mensaje para evitar clics accidentales</div>
+      <div>Reportar remitente y dominio al equipo SOC</div>
+    `;
+    resultCard.classList.add('show');
+    return resultado;
+  }
+
+  async function submitAnalysis() {
+    if (false) {
+      alert('Por favor clasifica el mensaje primero (Phishing o Legítimo).');
+      return;
+    }
+    selectedClassification = true;
+    const marcados = allIndicators.filter(ind => ![
+      'El mensaje tiene formato HTML',
+      'El mensaje fue enviado en horario laboral',
+      'El remitente usa un nombre corporativo'
+    ].includes(ind));
+    const justif = 'Clasificacion automatica generada por Prevencion de ataques.py';
+    const btn = document.getElementById('btn-submit-analysis');
+
+    btn.disabled = true;
+    btn.textContent = 'Analizando mensaje...';
+    await ejecutarEscaneoSimulado(currentMsg);
+
+    const res = await fetch('/api/analizar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mensaje_id: currentMsg.id,
+        es_phishing: selectedClassification,
+        indicadores_marcados: marcados,
+        justificacion: justif
+      })
+    });
+    const data = await res.json();
+    btn.disabled = false;
+    btn.textContent = 'Ejecutar detector';
+    btn.textContent = 'Enviar anÃ¡lisis';
+    btn.textContent = 'Ejecutar detector';
+    showResult(data, marcados);
+  }
+
+  function showResult(data, marcados) {
+    const overlay = document.getElementById('result-overlay');
+    const icon = document.getElementById('result-icon');
+    const title = document.getElementById('result-title');
+    const score = document.getElementById('result-score');
+    const explanation = document.getElementById('result-explanation');
+    const indList = document.getElementById('result-indicators-list');
+
+    icon.textContent = data.correcto ? '✅' : '❌';
+    title.textContent = data.mensaje;
+    title.className = `result-title ${data.correcto ? 'correct' : 'wrong'}`;
+    score.textContent = `${data.score} / 100`;
+    explanation.textContent = data.explicacion;
+
+    // Mostrar todos los indicadores reales con estado
+    indList.innerHTML = '';
+    data.indicadores_reales.forEach(ind => {
+      const marcado = marcados.includes(ind);
+      const correcto = data.indicadores_correctos.includes(ind);
+      const div = document.createElement('div');
+      div.className = 'indicator-result-item';
+      div.innerHTML = `
+        <span class="ind-icon ${correcto ? 'ind-correct' : 'ind-missed'}">
+          ${correcto ? '✓' : '○'}
+        </span>
+        <span style="color:${correcto ? 'var(--light)' : 'var(--muted)'}">${ind}</span>
+      `;
+      indList.appendChild(div);
+    });
+
+    overlay.classList.add('show');
+  }
+
+  function closeResult() {
+    document.getElementById('result-overlay').classList.remove('show');
+    // Resetear
+    selectedClassification = null;
+    document.getElementById('btn-phishing').classList.remove('selected');
+    document.getElementById('btn-legit').classList.remove('selected');
+    document.getElementById('justificacion').value = '';
+    document.querySelectorAll('.indicator-check').forEach(e => e.classList.remove('checked'));
+    resetDetectorPanel();
+  }
+
+  // Warning al hacer clic en URL maliciosa
+  function linkWarning(e) {
+    e.preventDefault();
+    const tooltip = document.getElementById('url-tooltip');
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.clientX + 10) + 'px';
+    tooltip.style.top = (e.clientY - 60) + 'px';
+    setTimeout(() => tooltip.style.display = 'none', 3000);
+  }
+
+  async function logout() {
+    await fetch('/api/logout', { method: 'POST' });
+    window.location.href = '/';
+  }
+
+  document.getElementById('btn-submit-analysis').lastChild.textContent = ' Ejecutar detector';
+  init();
+</script>
+</body>
+</html>
