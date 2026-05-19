@@ -91,16 +91,4 @@ A diferencia del **Nivel 1** (monitoreo y triage básico), este proyecto simula 
 | 6 | **Typosquatting** | `nexora-seguro.net` imita a `nexora.com` |
 | 7 | **Incongruencia geográfica** | Teléfono español (+34) para empresa mexicana |
 
----
 
-## 🛠 Tecnologías Utilizadas
-
-| Tecnología | Uso |
-|------------|-----|
-| HTML5 / CSS3 | Interfaz web del simulador |
-| JavaScript | Lógica de análisis simulada |
-| Git & GitHub | Control de versiones y despliegue |
-
----
-
-## 📁 Estructura del Proyecto
