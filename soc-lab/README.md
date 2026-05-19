@@ -82,11 +82,6 @@ pip install -r requirements.txt
 # 4. Ejecutar el servidor
 python app.py
 ```
-
-### Acceder
-
-Abre tu navegador en: **http://127.0.0.1:5000**
-
 ### Inicio rapido en Windows
 
 Tambien puedes iniciar la simulacion con doble clic en:
